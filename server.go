@@ -6,12 +6,12 @@ import (
 	"fmt"
 	authlib "github.com/clawio/service.auth/lib"
 	"github.com/clawio/service.localstore.data/lib"
-	pb "github.com/clawio/service.localstore.data/proto/propagator"
+	//pb "github.com/clawio/service.localstore.data/proto/propagator"
 	"github.com/clawio/service.localstorexattr.data/xattr"
 	log "github.com/sirupsen/logrus"
 	"github.com/zenazn/goji/web/mutil"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
+	//"google.golang.org/grpc"
 	"hash"
 	"hash/adler32"
 	"io"
@@ -22,6 +22,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"code.google.com/p/go-uuid/uuid"
 )
 
 const (
@@ -177,8 +178,14 @@ func (s *server) upload(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 	log.Infof("closed tmp file %s", tmpFn)
 
-	// TODO(labkode) Add xattr here
-	resourceID := uuid.New()
+	resourceID, err := getIDFromPath(pp)
+  	if err != nil {
+		log.Error(err)
+		http.Error(w, "", http.StatusInternalServerError)	
+		return
+	}		
+
+
 	err = xattr.SetXAttr(tmpFn, xattrKeyID, []byte(resourceID), xattr.XAttrCreate)
 	if err != nil {
 		log.Error(err)
@@ -186,15 +193,19 @@ func (s *server) upload(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+    log.Infof("resource id %s set for path %s in xattr %s", resourceID, pp, xattrKeyID)
+
 	if isChecksumed {
-		err = xattr.SetXAttr(tmpFn, xattrKeyChecksum, []byte(chk.String()), xattr.XAttrCreate)
+		err = xattr.SetXAttr(tmpFn, xattrKeyChecksum, []byte(s.p.checksum + ":" + computedChecksum), xattr.XAttrCreate)
 		if err != nil {
 			log.Error(err)
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-
 	}
+    
+    log.Infof("checksum %s set for path %s in xattr %s", computedChecksum, pp, xattrKeyChecksum)
+    
 	if err = os.Rename(tmpFn, pp); err != nil {
 		log.Error(err)
 		http.Error(w, "", http.StatusInternalServerError)
@@ -202,7 +213,9 @@ func (s *server) upload(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	log.Infof("renamed tmp file %s to %s", tmpFn, pp)
-
+    
+    // TODO(labkode) Connect to prop service
+	/*
 	con, err := grpc.Dial(s.p.prop, grpc.WithInsecure())
 	if err != nil {
 		log.Error(err)
@@ -211,7 +224,7 @@ func (s *server) upload(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 	defer con.Close()
 
-	log.Infof("created connection to %s", s.p.prop)
+    log.Infof("created connection to %s", s.p.prop)
 
 	client := pb.NewPropClient(con)
 
@@ -229,6 +242,7 @@ func (s *server) upload(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 	log.Infof("saved path %s into %s", p, s.p.prop)
 
+    */
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -239,7 +253,7 @@ func (s *server) download(ctx context.Context, w http.ResponseWriter, r *http.Re
 
 	pp := s.getPhysicalPath(p)
 
-	log.Info("physical path is %s", pp)
+	log.Infof("physical path is %s", pp)
 
 	fd, err := os.Open(pp)
 	if err == syscall.ENOENT {
@@ -365,7 +379,7 @@ func getIDFromPath(path string) ([]byte, error) {
 
 	id, err := xattr.GetXAttr(path, xattrKeyID)
 	if err != nil {
-		if err == syscall.ENODATA {
+		if err == syscall.ENODATA  || err == syscall.ENOENT{
 			id = []byte(uuid.New())
 			return id, nil
 		}

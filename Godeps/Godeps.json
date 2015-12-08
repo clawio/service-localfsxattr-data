@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/clawio/service.localstorexattr.data",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.5.1",
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/go-uuid/uuid",
@@ -13,10 +13,6 @@
 		},
 		{
 			"ImportPath": "github.com/clawio/service.localstore.data/lib",
-			"Rev": "ac174246ab9e68ae026ec976400c2fb60318026b"
-		},
-		{
-			"ImportPath": "github.com/clawio/service.localstore.data/proto/propagator",
 			"Rev": "ac174246ab9e68ae026ec976400c2fb60318026b"
 		},
 		{

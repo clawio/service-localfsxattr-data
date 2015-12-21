@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	serviceID         = "CLAWIO_LOCALSTOREXATTRDATA"
+	serviceID         = "CLAWIO_LOCALFSXATTR_DATA"
 	dataDirEnvar      = serviceID + "_DATADIR"
 	tmpDirEnvar       = serviceID + "_TMPDIR"
 	checksumEnvar     = serviceID + "_CHECKSUM"

@@ -76,6 +76,16 @@ func main() {
 	p.prop = env.prop
 	p.sharedSecret = env.sharedSecret
 
+	// Create data and tmp dirs
+	if err := os.MkdirAll(p.dataDir, 0644); err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+	if err := os.MkdirAll(p.tmpDir, 0644); err != nil {
+		log.Error(err)
+		os.Exit(1)
+	}
+
 	srv, err := newServer(p)
 	if err != nil {
 		log.Error(err)

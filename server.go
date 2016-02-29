@@ -1,7 +1,7 @@
 package main
 
 import (
-	"code.google.com/p/go-uuid/uuid"
+	"github.com/nu7hatch/gouuid"
 	"crypto/md5"
 	"crypto/sha1"
 	"fmt"
@@ -53,7 +53,12 @@ type server struct {
 
 func (s *server) ServeHTTPC(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 
-	traceID := getTraceID(r)
+	traceID, err := getTraceID(r)
+	if err != nil {
+		log.Error("cannot get trace ID")
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
 	reqLogger := log.WithField("trace", traceID)
 	ctx = newGRPCTraceContext(ctx, traceID)
 	ctx = NewLogContext(ctx, reqLogger)
@@ -375,14 +380,21 @@ func getIDFromPath(path string) ([]byte, error) {
 	id, err := xattr.GetXAttr(path, xattrKeyID)
 	if err != nil {
 		if err == syscall.ENODATA || err == syscall.ENOENT {
-			id = []byte(uuid.New())
-			return id, nil
+			rawUUID, err := uuid.NewV4()
+			if err != nil {
+				return []byte(""), err
+			}
+			return []byte(rawUUID.String()), nil
 		}
 		return []byte(""), err
 	}
 
 	if len(id) == 0 { // xattr is empty but is set
-		id = []byte(uuid.New())
+			rawUUID, err := uuid.NewV4()
+			if err != nil {
+				return []byte(""), err
+			}
+			id = []byte(rawUUID.String())
 	}
 
 	return id, nil

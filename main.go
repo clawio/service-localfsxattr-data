@@ -16,6 +16,7 @@ const (
 	checksumEnvar     = serviceID + "_CHECKSUM"
 	portEnvar         = serviceID + "_PORT"
 	propEnvar         = serviceID + "_PROP"
+	logLevelEnvar     = serviceID + "_LOGLEVEL"
 	sharedSecretEnvar = "CLAWIO_SHAREDSECRET"
 
 	endPoint = "/"
@@ -26,6 +27,7 @@ type environ struct {
 	tmpDir       string
 	checksum     string
 	port         int
+	logLevel     string
 	prop         string
 	sharedSecret string
 }
@@ -41,6 +43,7 @@ func getEnviron() (*environ, error) {
 	}
 	e.port = port
 	e.sharedSecret = os.Getenv(sharedSecretEnvar)
+	e.logLevel = os.Getenv(logLevelEnvar)
 	e.prop = os.Getenv(propEnvar)
 	return e, nil
 }
@@ -50,6 +53,7 @@ func printEnviron(e *environ) {
 	log.Infof("%s=%s\n", tmpDirEnvar, e.tmpDir)
 	log.Infof("%s=%s\n", checksumEnvar, e.checksum)
 	log.Infof("%s=%d\n", portEnvar, e.port)
+	log.Infof("%s=%s\n", logLevelEnvar, e.logLevel)
 	log.Infof("%s=%s\n", propEnvar, e.prop)
 	log.Infof("%s=%s\n", sharedSecretEnvar, "******")
 }
@@ -59,14 +63,19 @@ func main() {
 	c := xhandler.Chain{}
 	c.UseC(xhandler.CloseHandler)
 
-	log.Infof("Service %s started", serviceID)
-
 	env, err := getEnviron()
 	if err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}
 
+	l, err := log.ParseLevel(env.logLevel)
+	if err != nil {
+		l = log.ErrorLevel
+	}
+	log.SetLevel(l)
+
+	log.Infof("Service %s started", serviceID)
 	printEnviron(env)
 
 	p := &newServerParams{}

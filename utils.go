@@ -1,8 +1,8 @@
 package main
 
 import (
-	"code.google.com/p/go-uuid/uuid"
 	"github.com/clawio/service-auth/lib"
+	"github.com/nu7hatch/gouuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/metadata"

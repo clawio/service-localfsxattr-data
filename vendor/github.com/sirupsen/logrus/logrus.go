@@ -3,6 +3,7 @@ package logrus
 import (
 	"fmt"
 	"log"
+	"strings"
 )
 
 // Fields type, used to pass to `WithFields`.
@@ -33,7 +34,7 @@ func (level Level) String() string {
 
 // ParseLevel takes a string level and returns the Logrus log level constant.
 func ParseLevel(lvl string) (Level, error) {
-	switch lvl {
+	switch strings.ToLower(lvl) {
 	case "panic":
 		return PanicLevel, nil
 	case "fatal":
@@ -74,7 +75,11 @@ const (
 )
 
 // Won't compile if StdLogger can't be realized by a log.Logger
-var _ StdLogger = &log.Logger{}
+var (
+	_ StdLogger = &log.Logger{}
+	_ StdLogger = &Entry{}
+	_ StdLogger = &Logger{}
+)
 
 // StdLogger is what your logrus-enabled library should take, that way
 // it'll accept a stdlib logger and a logrus logger. There's no standard

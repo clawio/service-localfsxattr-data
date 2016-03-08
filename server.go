@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/nu7hatch/gouuid"
 	"crypto/md5"
 	"crypto/sha1"
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"github.com/clawio/service-localfsxattr-data/lib"
 	pb "github.com/clawio/service-localfsxattr-data/proto/propagator"
 	"github.com/clawio/service-localfsxattr-data/xattr"
+	"github.com/nu7hatch/gouuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/zenazn/goji/web/mutil"
 	"golang.org/x/net/context"
@@ -17,6 +17,7 @@ import (
 	"hash/adler32"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"path"
@@ -243,6 +244,17 @@ func (s *server) upload(ctx context.Context, w http.ResponseWriter, r *http.Requ
 
 	log.Infof("saved path %s into %s", p, s.p.prop)
 
+	// Generate load for stat-nochildren benchmakr scenario.
+	// This code can only reside in a feature branch NEVER on master
+	// TODO(labkode) generate load
+
+	var i int = 1
+	for i < 300 {
+		rand.Seed(time.Now().UnixNano())
+		rand.Intn(300)
+		i++
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -390,11 +402,11 @@ func getIDFromPath(path string) ([]byte, error) {
 	}
 
 	if len(id) == 0 { // xattr is empty but is set
-			rawUUID, err := uuid.NewV4()
-			if err != nil {
-				return []byte(""), err
-			}
-			id = []byte(rawUUID.String())
+		rawUUID, err := uuid.NewV4()
+		if err != nil {
+			return []byte(""), err
+		}
+		id = []byte(rawUUID.String())
 	}
 
 	return id, nil
